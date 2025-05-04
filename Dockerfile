@@ -15,7 +15,13 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-spa \
     tesseract-ocr-chi-sim
 
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+	PATH=/home/user/.local/bin:$PATH
+
 WORKDIR /app
+COPY --chown=user . /app
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
