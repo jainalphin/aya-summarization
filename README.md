@@ -1,3 +1,10 @@
-# Expedition-Aya-Insight
-AI-Powered Multilingual Scientific Summarization with Cohere
-Aya-Insight is a fast, multilingual AI tool that extracts structured, reasoning-driven insights from scientific research papers. 
+---
+title: Aya Summarization
+emoji: 🧠
+colorFrom: blue
+colorTo: green
+sdk: docker
+sdk_version: "1.0.0"
+app_file: app.py
+pinned: false
+---
