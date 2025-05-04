@@ -5,8 +5,14 @@ import logging
 # Load environment variables from a .env file
 load_dotenv()
 
-# Configure logging for the httpx library to suppress warnings
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
+logger.info(f"Logging level set to {LOG_LEVEL}")
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logger.info("Configured httpx logger level to WARNING to suppress verbose request logs.")
+
 
 # Define default paths for documents and summaries output
 DOCS_FOLDER = os.getenv("DOCS_FOLDER", "samples/pdf5")

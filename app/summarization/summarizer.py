@@ -26,15 +26,6 @@ class DocumentSummarizer:
 
         self.prompts = self._initialize_prompts()
 
-        # Validate prompts dictionary matches components
-        # This helps catch missing prompts or components
-        missing_prompts = [comp for comp in self.components if comp not in self.prompts]
-        if missing_prompts:
-             print(f"Warning: No prompts found for components: {missing_prompts}")
-        missing_components = [prompt_key for prompt_key in self.prompts if prompt_key not in self.components]
-        if missing_components:
-             print(f"Warning: Prompts found for components not in self.components: {missing_components}")
-
 
     def _initialize_prompts(self):
         # It's better to explicitly import what you need
@@ -62,10 +53,6 @@ class DocumentSummarizer:
         Summarizes the provided documents using the given prompt and language
         via the Cohere Chat API.
         """
-        if not documents:
-            print("Warning: No documents provided for summarization.")
-            return None # Or an empty string, depending on desired behavior
-
         # Use the initialized client
         try:
             response = self.cohere_client.chat(
@@ -79,7 +66,6 @@ class DocumentSummarizer:
             if response and response.message and response.message.content and response.message.content[0] and response.message.content[0].text:
                  return response.message.content[0].text
             else:
-                 print(f"Warning: Unexpected API response structure for prompt: {prompt[:50]}...")
                  return None
 
         except Exception as e:
@@ -117,34 +103,15 @@ class DocumentSummarizer:
         errors = {} # Track errors
 
         def process_component(comp):
-            comp_start = time.time()
-            print(f"Starting processing for component: {comp}")
             try:
                 document_chunks = self.extract_relevant_documents(comp, filename, chunk_size)
-
-                if not document_chunks:
-                    print(f"No documents found for component: {comp} for file {filename}")
-                    return comp, None, f"No documents found"
-
                 prompt = self.prompts.get(comp)
-                if not prompt:
-                    print(f"No prompt defined for component: {comp}")
-                    return comp, None, f"No prompt defined"
-
-                # Summarize the retrieved documents
                 summary = self.summarize_text(document_chunks, prompt, language)
-
-                comp_end = time.time()
-                print(f"Finished processing for component: {comp}. Time taken: {comp_end - comp_start:.2f} seconds")
-                return comp, summary, None # Return comp, result, error
+                return comp, summary, None
 
             except Exception as e:
-                comp_end = time.time()
-                print(f"Error processing component {comp}: {e}. Time taken: {comp_end - comp_start:.2f} seconds")
-                return comp, None, str(e) # Return comp, result, error
+                return comp, None, str(e)
 
-        # Use ThreadPoolExecutor for I/O-bound tasks (API calls)
-        # max_workers=None uses a default appropriate for the system
         with ThreadPoolExecutor(max_workers=None) as executor:
             # Submit all component tasks
             future_to_component = {executor.submit(process_component, comp): comp for comp in components}
@@ -160,24 +127,12 @@ class DocumentSummarizer:
                         errors[comp_name] = error
 
                 except Exception as exc:
-                    # This catches exceptions *within* the future's result retrieval, less common
-                    print(f'{comp} generated an exception: {exc}')
                     errors[comp] = str(exc)
 
 
         end_total = time.time()
         print(f"\n--- Total summarization time for {filename}: {end_total - start_total:.2f} seconds ---\n")
-
-        # You might want to return both results and errors
-        # For simplicity, let's just compile the available results for now
         compiled = self.compile_summary(filename, results)
-        # Optionally, add errors to the compiled output or return them separately
-        if errors:
-             print(f"Components that failed or returned no data: {list(errors.keys())}")
-             # You could append error messages to the compiled summary
-             # compiled += "\n\n## Processing Errors\n" + "\n".join([f"- {k}: {v}" for k, v in errors.items()])
-
-
         return compiled
 
 
